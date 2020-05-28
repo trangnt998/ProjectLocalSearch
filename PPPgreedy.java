@@ -5,7 +5,7 @@ public class PPPgreedy {
 	int A = 10; // tong dien tich thua ruong
 	int C = 10; // so von toi da co duoc
 	int F = 0; // tong so loi nhuan thu duoc
-	int a[] = {1,2,3}; // a[i] la dien tich can de san xuat 1 san pham loai i
+	int a[] = {3,2,1}; // a[i] la dien tich can de san xuat 1 san pham loai i
 	int c[] = {1,3,2}; // c[i] la chi phi san xuat cua nong san c[i]
 	int f[] = {4,2,3}; // f[i] la loi nhuan thu duoc khi san xuat san pham loai i
 	int m[] = {2,2,2}; // m[i] la so san pham toi thieu can san xuat khi quyet dinh san xuat san pham loai i
@@ -17,21 +17,21 @@ public class PPPgreedy {
 		t = new int[3];
 	}
 
-	public double[] fc() {
-		double[] fc = new double[N];
+	public double[] fca() {
+		double[] fca = new double[N];
 		for(int i = 0; i < N; i++) {
-			fc[i] = f[i]*1.0/c[i];	
+			fca[i] = f[i]*1.0/(c[i]*a[i]);	
 			
 		}
-		return fc;
+		return fca;
 	}
 	
-	public int max_index(double [] fc) {
+	public int max_index(double [] fca) {
 		double max = -1;
 		int index = 0;		
 		for(int i = 0; i < N; i++) {
-			if(fc[i] > max) {
-				max = fc[i];
+			if(fca[i] > max) {
+				max = fca[i];
 				index = i;
 			}
 		}
@@ -39,17 +39,17 @@ public class PPPgreedy {
 	}
 	
 	public void solution() {
-		double[] fc = new double[N];
-		fc = fc();
+		double[] fca = new double[N];
+		fca = fca();
 		for(int  i= 0; i< N; i++) {
-			System.out.println(fc[i]);
+			System.out.println(fca[i]);
 		}
 		int A1 = A;
 		int C1 = C;
 		for(int i = 0; i < N; i++) {
 			System.out.println("i = " + i);
-			int index = max_index(fc);
-			fc[index] = 0;
+			int index = max_index(fca);
+			fca[index] = 0;
 			
 			if((m[index]*a[index] <=A1) &&(c[index]*m[index] <= C1)) {
 				x[index] = 1;
