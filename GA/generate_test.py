@@ -24,8 +24,9 @@ for i in range(len(N)):
         c = C[-1]
     f.write(str(n) + " " +str(a)+ " " + str(c) + "\n")
     for i in range(n):
-        finess = rd.randint(int(1.5*c//n) , int(4*c//n))
-        cost = rd.randint(int(finess//4), int(finess//2))
+        cost  = rd.randint(int(c//(2*n)), int((2*c)//n) )
+        finess = rd.randint(int(1.5*cost) , int(4*cost))
+        #cost = rd.randint(int(finess//4), int(finess//2))
         area = rd.randint(int(a//(2*n)), int((2*a)//n))
         minnb = rd.randint(int(c//(cost*n)), int(c//(4*cost)))  
         f.write(str(area) + " " + str(finess) + " " + str(cost) + " " + str(minnb) + "\n")

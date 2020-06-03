@@ -2,10 +2,10 @@ import random
 import csv
 from collections import namedtuple
 Item = namedtuple("Item", ['index', 'area' , 'fitness', 'cost', 'minnb'])
-cross_rate = 0.6  # crossover rate
+cross_rate = 0.6 # crossover rate
 u_rate = 0.6  # uniform crossover rate aka chance of gene to swap
-eli = 2  # number of elites
-mutation_rate = 0.1
+eli = 1  # number of elites
+mutation_rate = 0.05
 pop_size = 100
 max_gen = 100
 def solve_it(input_data):
@@ -33,6 +33,7 @@ def repairgene(chromosome, items):
     for i in range(length):
         if(chromosome[i] < items[i].minnb):
             chromosome[i] = 0
+    
     return chromosome
 def generate(nbitems,totalarea,totalcost, items):
     chromosome = [0]*nbitems
@@ -42,7 +43,7 @@ def generate(nbitems,totalarea,totalcost, items):
         temp1 = int(c/items[i].cost)
         temp2 = int(a/ items[i].area)
         temp = min(temp1,temp2)
-        if random.random() < 0.5:
+        if random.random() > 0.4:
             chromosome[i] = random.randint(items[i].minnb, int(temp))
     return chromosome
 def fitness(chromosome: list, nbitems,totalarea,totalcost, items):
@@ -58,7 +59,7 @@ def fitness(chromosome: list, nbitems,totalarea,totalcost, items):
     # # print("done fitness")
     return values
 def roulette_selection(pop, nbitems,totalarea,totalcost, items):
-    # sorted_pop = sorted(pop, key=lambda x: fitness(x), reverse=True)
+    #sorted_pop = sorted(pop, key=lambda x: fitness(x,  nbitems,totalarea,totalcost, items), reverse=True)
     sum_fits = sum(fitness(x, nbitems,totalarea,totalcost, items) for x in pop)
     chosen = []
     for _ in range(2):
@@ -82,7 +83,7 @@ def crossover(dad, mom, nbitems, items):
     #     mutate(mom)
     # # print("done crossover")
     dad = repairgene(dad, items)
-    mon = repairgene(mom, items)
+    mom = repairgene(mom, items)
     return dad, mom
 
 def mutate(chromosome, chance, items ):
@@ -94,47 +95,78 @@ def mutate(chromosome, chance, items ):
                 swap_indx += 1
                 chromosome[i], chromosome[swap_indx] = chromosome[swap_indx], chromosome[i]
     chromosome = repairgene(chromosome, items)
-    return chromosome,
+    return chromosome
 
 def elites(sorted_pop):
     return [sorted_pop[i]for i in range(eli)]
 
 def new_population(pop, nbitems,totalarea,totalcost, items):
-    new_pop = []
-    # print("new pop: {0}".format(new_pop))
-    elite_group = elites(pop)
-    # print("elites: {0}".format(elite_group))
-    new_pop.extend(elite_group)
-    # print("new pop with elites: {0}".format(new_pop))
-    pop = [x for x in pop if x not in elite_group]
-    # print(len(new_pop))
-    while len(new_pop) < pop_size:
+    # new_pop = []
+    # # print("new pop: {0}".format(new_pop))
+    # elite_group = elites(pop)
+    # # print("elites: {0}".format(elite_group))
+    # new_pop.extend(elite_group)
+    # # print("new pop with elites: {0}".format(new_pop))
+    # pop = [x for x in pop if x not in elite_group]
+    # # print(len(new_pop))
+    # while len(new_pop) < pop_size:
         # 18+
-        parents = roulette_selection(pop, nbitems,totalarea,totalcost, items)
-        # print(parents)
-        dad = parents[0]
-        child1 = dad
-        mom = parents[1]
-        # if child1 == child2:
-        child2 = mom
-        if random.random() < cross_rate:
-            new_children = crossover(dad, mom, nbitems, items)
-            child1 = new_children[0]
-            child2 = new_children[1]
-            mutate(child1, mutation_rate, items)
-            mutate(child2, mutation_rate, items)
-        if child1 == child2 and fitness(child1, nbitems,totalarea,totalcost, items) != 0:
-            new_pop.append(child1)
-        elif child1 != child2:
-            if fitness(child1 ,nbitems,totalarea,totalcost, items) != 0:
-                new_pop.append(child1)
-            if fitness(child2 ,nbitems,totalarea,totalcost, items) != 0:
-                new_pop.append(child2)
+        # parents = roulette_selection(pop, nbitems,totalarea,totalcost, items)
+        # # print(parents)
+        # dad = parents[0]
+        # child1 = dad
+        # mom = parents[1]
+        # # if child1 == child2:
+        # child2 = mom
+        # if random.random() < cross_rate:
+        #     new_children = crossover(dad, mom, nbitems, items)
+        #     child1 = new_children[0]
+        #     child2 = new_children[1]
+        #     mutate(child1, mutation_rate, items)
+        #     mutate(child2, mutation_rate, items)
+        # if child1 == child2 and fitness(child1, nbitems,totalarea,totalcost, items) != 0:
+        #     new_pop.append(child1)
+        # elif child1 != child2:
+        #     if fitness(child1 ,nbitems,totalarea,totalcost, items) != 0:
+        #         new_pop.append(child1)
+        #     if fitness(child2 ,nbitems,totalarea,totalcost, items) != 0:
+        #         new_pop.append(child2)
         # elif child1 != child2 and fitness(child2) != 0:
         #     new_pop.append(child2)
     # print("done new_pop")
     # print(new_pop)
-    return new_pop
+
+    new_pop = []
+    new_pop.extend(pop)
+    elite_group = elites(pop)
+
+    # crossover
+    for _ in range(len(pop)):
+        parents = roulette_selection(pop, nbitems,totalarea,totalcost, items)
+        dad = parents[0]
+        mom = parents[1]
+        child1 = dad
+        child2 = mom
+        if(random.random() < cross_rate):
+            child = crossover(dad, mom, nbitems, items)
+            child1 = child[0]
+            child2 = child[1]
+        new_pop.append(child1)
+        new_pop.append(child2)
+
+    # mutation
+    mutation_list = []
+    for ividual in new_pop:
+        new_ividual = mutate(ividual, mutation_rate, items)
+        mutation_list.append(new_ividual)
+    new_pop.extend(mutation_list)
+    #print(new_pop)
+    # selection
+    new_pop = sorted(new_pop, key=lambda x: fitness(x, nbitems,totalarea,totalcost, items), reverse=True)
+    new_pop = new_pop[:pop_size - eli]
+    new_pop.extend(elite_group)
+    return new_pop[:pop_size]
+
 
 
 # get the total weight of each gene from chromosome
@@ -164,14 +196,19 @@ def GA(nbitems,totalarea,totalcost, items):
     # pop = sorted(pop, key=lambda x: fitness(x), reverse=True)
     # while pop[1] != pop[2] != pop[3]:
     for _ in range(max_gen):
-        print(generation)
+        print('Vong Lap thu: ' +str(generation))
+
         pop = sorted(pop, key=lambda x: fitness(x, nbitems,totalarea,totalcost, items), reverse=True)
         print(pop)
         fit = [fitness(i, nbitems,totalarea,totalcost, items) for i in pop]
+        print("The fitness:")
         print(fit)
 
         pop = new_population(pop, nbitems,totalarea,totalcost, items)
+        print("Sau the the:")
         print(pop)
+
+
 
         print("----------------")
         generation += 1
