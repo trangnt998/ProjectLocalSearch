@@ -6,8 +6,11 @@ cross_rate = 0.6 # crossover rate
 u_rate = 0.6  # uniform crossover rate aka chance of gene to swap
 eli = 1  # number of elites
 mutation_rate = 0.05
-pop_size = 100
+pop_size = 50
 max_gen = 100
+fiss = namedtuple("Fitness", ['maxf' , 'meanf'])
+histogram_fit = []
+
 def solve_it(input_data):
     items = []
     nbitems: int  # so loai san pham
@@ -25,26 +28,32 @@ def solve_it(input_data):
         line = lines[i]
         parts = line.split()
         items.append(Item(i-1, int(parts[0]), int(parts[1]), int(parts[2]), int(parts[3])))
+    
+
     GA(nbitems,totalarea,totalcost, items)
 
 
-def repairgene(chromosome, items):
+def repairgene(chromosome, items, totalcost, totalarea):
     length  = len(chromosome)
+    cost, area = get_weight(chromosome, items)
+    while(cost > totalcost or area > totalarea):
+        r = random.random()
+        idx = random.randint(0,length-1)
+        if(chromosome[idx] > 0):
+            chromosome[idx] = int(r*chromosome[idx])
+        cost, area = get_weight(chromosome,items)
     for i in range(length):
         if(chromosome[i] < items[i].minnb):
             chromosome[i] = 0
-    
+ 
     return chromosome
 def generate(nbitems,totalarea,totalcost, items):
     chromosome = [0]*nbitems
-    c = totalcost
-    a = totalarea
+    maxitem1 = max_item(nbitems,items,totalcost,totalarea)
     for i in range(nbitems):
-        temp1 = int(c/items[i].cost)
-        temp2 = int(a/ items[i].area)
-        temp = min(temp1,temp2)
-        if random.random() > 0.4:
-            chromosome[i] = random.randint(items[i].minnb, int(temp))
+        if random.random() > 0.5:
+            chromosome[i] = random.randint(items[i].minnb,  maxitem1[i])
+    chromosome = repairgene(chromosome, items, totalcost, totalarea)
     return chromosome
 def fitness(chromosome: list, nbitems,totalarea,totalcost, items):
     values = 0
@@ -67,75 +76,51 @@ def roulette_selection(pop, nbitems,totalarea,totalcost, items):
         sum_temp = 0
         for i in pop:
             sum_temp += fitness(i,nbitems,totalarea,totalcost, items)
-            if sum_temp > r:
+            if sum_temp >= r:
+                chosen.append(i)
+                break
+    return chosen
+def selection( numselect, pop, nbitems,totalarea,totalcost, items):
+    #sorted_pop = sorted(pop, key=lambda x: fitness(x,  nbitems,totalarea,totalcost, items), reverse=True)
+    sum_fits = sum(fitness(x, nbitems,totalarea,totalcost, items) for x in pop)
+    chosen = []
+    for _ in range(numselect):
+        r = random.random() * sum_fits
+        sum_temp = 0
+        for i in pop:
+            sum_temp += fitness(i,nbitems,totalarea,totalcost, items)
+            if sum_temp >= r:
                 chosen.append(i)
                 break
     return chosen
 
-def crossover(dad, mom, nbitems, items):
+def crossover(dad, mom, nbitems, items, totalcost, totalarea):
     # child1 = dad
     # child2 = mom
-    for i in range(nbitems):
-        if random.random() < u_rate:
-            dad[i], mom[i] = mom[i], dad[i]
-    # if random.random() < mutation_rate:
-    #     mutate(dad)
-    #     mutate(mom)
-    # # print("done crossover")
-    dad = repairgene(dad, items)
-    mom = repairgene(mom, items)
-    return dad, mom
+    r = random.randint(0 , nbitems-1)
 
-def mutate(chromosome, chance, items ):
+    child1 = dad[:r]
+    child1.extend(mom[r:])
+    child2 = mom[:r]
+    child2.extend(dad[r:])
+    child1 = repairgene(child1, items, totalcost, totalarea)
+    child2 = repairgene(child2,items, totalcost, totalarea)
+    return child1, child2
+
+def mutate(chromosome,chance, items, totalcost, totalarea ):
     length = len(chromosome)
+    up = max_item(length,items,totalarea,totalarea)
     for i in range(length):
-        if random.random() < chance:
-            swap_indx = random.randint(0, length - 2)
-            if swap_indx >= i:
-                swap_indx += 1
-                chromosome[i], chromosome[swap_indx] = chromosome[swap_indx], chromosome[i]
-    chromosome = repairgene(chromosome, items)
+        if(random.random() < chance):          
+            r = random.randint(0, up[i])
+            chromosome[i] = r
+    chromosome = repairgene(chromosome, items ,totalcost, totalarea)
     return chromosome
 
 def elites(sorted_pop):
     return [sorted_pop[i]for i in range(eli)]
 
 def new_population(pop, nbitems,totalarea,totalcost, items):
-    # new_pop = []
-    # # print("new pop: {0}".format(new_pop))
-    # elite_group = elites(pop)
-    # # print("elites: {0}".format(elite_group))
-    # new_pop.extend(elite_group)
-    # # print("new pop with elites: {0}".format(new_pop))
-    # pop = [x for x in pop if x not in elite_group]
-    # # print(len(new_pop))
-    # while len(new_pop) < pop_size:
-        # 18+
-        # parents = roulette_selection(pop, nbitems,totalarea,totalcost, items)
-        # # print(parents)
-        # dad = parents[0]
-        # child1 = dad
-        # mom = parents[1]
-        # # if child1 == child2:
-        # child2 = mom
-        # if random.random() < cross_rate:
-        #     new_children = crossover(dad, mom, nbitems, items)
-        #     child1 = new_children[0]
-        #     child2 = new_children[1]
-        #     mutate(child1, mutation_rate, items)
-        #     mutate(child2, mutation_rate, items)
-        # if child1 == child2 and fitness(child1, nbitems,totalarea,totalcost, items) != 0:
-        #     new_pop.append(child1)
-        # elif child1 != child2:
-        #     if fitness(child1 ,nbitems,totalarea,totalcost, items) != 0:
-        #         new_pop.append(child1)
-        #     if fitness(child2 ,nbitems,totalarea,totalcost, items) != 0:
-        #         new_pop.append(child2)
-        # elif child1 != child2 and fitness(child2) != 0:
-        #     new_pop.append(child2)
-    # print("done new_pop")
-    # print(new_pop)
-
     new_pop = []
     new_pop.extend(pop)
     elite_group = elites(pop)
@@ -143,12 +128,14 @@ def new_population(pop, nbitems,totalarea,totalcost, items):
     # crossover
     for _ in range(len(pop)):
         parents = roulette_selection(pop, nbitems,totalarea,totalcost, items)
+
         dad = parents[0]
         mom = parents[1]
         child1 = dad
         child2 = mom
+        #print(parents)
         if(random.random() < cross_rate):
-            child = crossover(dad, mom, nbitems, items)
+            child = crossover(dad, mom, nbitems, items, totalcost, totalarea)
             child1 = child[0]
             child2 = child[1]
         new_pop.append(child1)
@@ -157,15 +144,15 @@ def new_population(pop, nbitems,totalarea,totalcost, items):
     # mutation
     mutation_list = []
     for ividual in new_pop:
-        new_ividual = mutate(ividual, mutation_rate, items)
+        new_ividual = mutate(ividual, mutation_rate, items, totalcost, totalarea)
         mutation_list.append(new_ividual)
+        new_pop.remove(ividual)
     new_pop.extend(mutation_list)
     #print(new_pop)
     # selection
-    new_pop = sorted(new_pop, key=lambda x: fitness(x, nbitems,totalarea,totalcost, items), reverse=True)
-    new_pop = new_pop[:pop_size - eli]
+    new_pop = selection(pop_size -eli, new_pop, nbitems,totalarea,totalcost, items)
     new_pop.extend(elite_group)
-    return new_pop[:pop_size]
+    return new_pop
 
 
 
@@ -173,12 +160,15 @@ def new_population(pop, nbitems,totalarea,totalcost, items):
 # aka gene = 4 => total weight = 4 * item.weight
 def get_weight(chromosome ,items):
     length = len(chromosome)
-    c_weight = []
+    c_weight = 0
+    c_area = 0 
     for i in range(length):
         w = chromosome[i]*items[i].cost
-        c_weight.append(w)
+        a = chromosome[i]*items[i].area
+        c_weight += w
+        c_area += a
     # print("done get_weight")
-    return c_weight
+    return c_weight, c_area
 
 def max_item(nbitems, items, totalcost, totalarea):
     length = nbitems
@@ -189,7 +179,10 @@ def max_item(nbitems, items, totalcost, totalarea):
     # print("done max_item")
     return list_max
 
+from statistics import mean
 def GA(nbitems,totalarea,totalcost, items):
+    max_fit = 0
+    optimal = []
     generation = 1
     pop = [generate(nbitems,totalarea,totalcost, items) for _ in range(pop_size)]
     # print("initilaized pop: {0}".format(pop))
@@ -199,22 +192,64 @@ def GA(nbitems,totalarea,totalcost, items):
         print('Vong Lap thu: ' +str(generation))
 
         pop = sorted(pop, key=lambda x: fitness(x, nbitems,totalarea,totalcost, items), reverse=True)
-        print(pop)
+        #print(pop)
         fit = [fitness(i, nbitems,totalarea,totalcost, items) for i in pop]
+        
+        histogram_fit.append(fiss(fit[0], mean(fit)))
+        
+        print("the max fitness of %d-th =  " %generation + str(fit[0]) )
+        if(max_fit <= fit[0]):
+            optimal = pop[0]
+            max_fit = fit[0]
+        print("The best Fitness = " ,max_fit)
         print("The fitness:")
         print(fit)
 
-        pop = new_population(pop, nbitems,totalarea,totalcost, items)
-        print("Sau the the:")
-        print(pop)
+        if(generation > 3):
+            if(histogram_fit[generation-1].maxf == histogram_fit[generation-2].maxf == histogram_fit[generation-3].maxf == max_fit ):
+                break
 
+        pop = new_population(pop, nbitems,totalarea,totalcost, items)
+        
 
 
         print("----------------")
         generation += 1
-    # print("am i fucked?")
-    print("Best gene:" + str(pop[0]))
-    print("Best Finness: ",fitness(pop[0],nbitems,totalarea,totalcost,items))
+    # vong lap cuoi
+    if(len(histogram_fit) == max_gen):
+        pop = sorted(pop, key=lambda x: fitness(x, nbitems,totalarea,totalcost, items), reverse=True)
+        fit = [fitness(i, nbitems,totalarea,totalcost, items) for i in pop]
+        print("the max fitness of %d-th =  " %generation + str(fit[0]) )
+        histogram_fit.append(fiss(fit[0], mean(fit)))
+        if(max_fit < fit[0]):
+            optimal = pop[0]
+            max_fit = fit[0]
+        print("The fitness:")
+        print(fit)
+    print(" The optimal gen :" , optimal)
+    print("The best Fitness = " + str(max_fit))
+
+import matplotlib.pyplot as plt
+import numpy as np
+def visualize(histogram_fit):
+    num_generations = len(histogram_fit)
+    fitness_history_mean = []
+    fitness_history_max = []
+    for i in range(num_generations):
+        fitness_history_mean.append(histogram_fit[i].meanf)
+        fitness_history_max.append(histogram_fit[i].maxf)
+        
+    plt.plot(list(range(num_generations)), fitness_history_mean, label = 'Mean Fitness')
+    plt.plot(list(range(num_generations)), fitness_history_max, label = 'Max Fitness')
+    plt.legend()
+    plt.title('Fitness through the generations')
+    plt.xlabel('Generations')
+    plt.ylabel('Fitness')
+    plt.show()
+
+
+    
+    
 
 
 
@@ -231,16 +266,18 @@ import time
 if __name__ == '__main__':
     import sys
     
-    if len(sys.argv) > 1:
-        time1 =  time.process_time()
-        file_location = sys.argv[1].strip()
-        with open(file_location, 'r') as input_data_file:
-            input_data = input_data_file.read()
+    #if len(sys.argv) > 1:
+    time1 =  time.process_time()
+    file_location = 'test_2'
+        #file_location = sys.argv[1].strip()
+    with open(file_location, 'r') as input_data_file:
+        input_data = input_data_file.read()
         
-        print(solve_it(input_data))
-        time2  = time.process_time()
-        print(str(time2 - time1) + 's')
+    print(solve_it(input_data))
+    time2  = time.process_time()
+    print(str(time2 - time1) + 's')
+    visualize(histogram_fit)
     
-    else:
-        print('This test requires an input file.  Please select one from the data directory. (i.e. python solver.py ./data/gc_4_1)')
+    #else:
+    #    print('This test requires an input file.  Please select one from the data directory. (i.e. python solver.py ./data/gc_4_1)')
     
