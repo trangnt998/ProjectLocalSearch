@@ -12,6 +12,11 @@ num_local = 10
 fiss = namedtuple("Fitness", ['maxf' , 'meanf'])
 histogram_fit = []
 
+
+
+num_cal = 10
+calresult = []
+
 def solve_it(input_data):
     items = []
     nbitems: int  # so loai san pham
@@ -30,8 +35,7 @@ def solve_it(input_data):
         parts = line.split()
         items.append(Item(i-1, int(parts[0]), int(parts[1]), int(parts[2]), int(parts[3])))
     
-
-    GA(nbitems,totalarea,totalcost, items)
+    return GA(nbitems,totalarea,totalcost, items)
 
 
 def repairgene(chromosome, items, totalcost, totalarea):
@@ -237,6 +241,7 @@ def GA(nbitems,totalarea,totalcost, items):
         print(fit)
     print(" The optimal gen :" , optimal)
     print("The best Fitness = " + str(max_fit))
+    return max_fit
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -272,6 +277,7 @@ def visualize(histogram_fit):
 
 import sys
 import time
+import statistics 
 if __name__ == '__main__':
     import sys
     
@@ -281,11 +287,16 @@ if __name__ == '__main__':
         #file_location = sys.argv[1].strip()
     with open(file_location, 'r') as input_data_file:
         input_data = input_data_file.read()
-        
-    print(solve_it(input_data))
+    for i in range(num_cal):
+        calresult.append(solve_it(input_data))
     time2  = time.process_time()
-    print(str(time2 - time1) + 's')
-    visualize(histogram_fit)
+    print("time = " + str((time2 - time1)/num_cal) + 's')
+    print("min = ", min(calresult))
+    print("max = ",max(calresult))
+    print("avg = " , statistics.mean(calresult))
+    print("std = ", statistics.stdev(calresult))
+
+    #visualize(histogram_fit)
     
     #else:
     #    print('This test requires an input file.  Please select one from the data directory. (i.e. python solver.py ./data/gc_4_1)')
