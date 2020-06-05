@@ -4,10 +4,11 @@ from collections import namedtuple
 Item = namedtuple("Item", ['index', 'area' , 'fitness', 'cost', 'minnb'])
 cross_rate = 0.6 # crossover rate
 u_rate = 0.6  # uniform crossover rate aka chance of gene to swap
-eli = 1  # number of elites
+eli = 10  # number of elites
 mutation_rate = 0.05
-pop_size = 50
-max_gen = 100
+pop_size = 100
+max_gen = 200
+num_local = 10
 fiss = namedtuple("Fitness", ['maxf' , 'meanf'])
 histogram_fit = []
 
@@ -205,10 +206,18 @@ def GA(nbitems,totalarea,totalcost, items):
         print("The fitness:")
         print(fit)
 
-        if(generation > 3):
-            if(histogram_fit[generation-1].maxf == histogram_fit[generation-2].maxf == histogram_fit[generation-3].maxf == max_fit ):
+        if(generation > 11):
+            
+            local = True
+            for i in range(1,num_local):
+                if(histogram_fit[generation-i].maxf > max_fit):
+                    local = False
+                    break
+            if(local == True):
                 break
+            
 
+            
         pop = new_population(pop, nbitems,totalarea,totalcost, items)
         
 
@@ -268,7 +277,7 @@ if __name__ == '__main__':
     
     #if len(sys.argv) > 1:
     time1 =  time.process_time()
-    file_location = 'test_2'
+    file_location = 'test_0'
         #file_location = sys.argv[1].strip()
     with open(file_location, 'r') as input_data_file:
         input_data = input_data_file.read()
