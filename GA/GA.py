@@ -4,10 +4,10 @@ from collections import namedtuple
 Item = namedtuple("Item", ['index', 'area' , 'fitness', 'cost', 'minnb'])
 cross_rate = 0.6 # crossover rate
 u_rate = 0.6  # uniform crossover rate aka chance of gene to swap
-eli = 10  # number of elites
-mutation_rate = 0.05
-pop_size = 100
-max_gen = 200
+eli = 20  # number of elites
+mutation_rate = 0.1
+pop_size = 50
+max_gen = 100
 num_local = 10
 fiss = namedtuple("Fitness", ['maxf' , 'meanf'])
 histogram_fit = []
@@ -287,16 +287,17 @@ if __name__ == '__main__':
         #file_location = sys.argv[1].strip()
     with open(file_location, 'r') as input_data_file:
         input_data = input_data_file.read()
-    for i in range(num_cal):
-        calresult.append(solve_it(input_data))
-    time2  = time.process_time()
-    print("time = " + str((time2 - time1)/num_cal) + 's')
-    print("min = ", min(calresult))
-    print("max = ",max(calresult))
-    print("avg = " , statistics.mean(calresult))
-    print("std = ", statistics.stdev(calresult))
+    solve_it(input_data)
+    # for i in range(num_cal):
+    #     calresult.append(solve_it(input_data))
+    # time2  = time.process_time()
+    # print("time = " + str((time2 - time1)/num_cal) + 's')
+    # print("min = ", min(calresult))
+    # print("max = ",max(calresult))
+    # print("avg = " , statistics.mean(calresult))
+    # print("std = ", statistics.stdev(calresult))
 
-    #visualize(histogram_fit)
+    visualize(histogram_fit)
     
     #else:
     #    print('This test requires an input file.  Please select one from the data directory. (i.e. python solver.py ./data/gc_4_1)')
